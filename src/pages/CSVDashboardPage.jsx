@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import Chart from "chart.js/auto";
 import { useCsvDashboardController } from "../controllers/useCSVDashboardController";
 import logoIcon from "../assets/Logo.ico";
-import "../styles/csvDashboard.css";
+import "../styles/CSVDashboard.css";
 
 export default function CsvDashboardPage() {
   const {
