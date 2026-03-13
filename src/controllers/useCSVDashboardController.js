@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { clearUpload, getResult, getStatus, uploadCsv } from "../services/dashboardApi";
+import { clearUpload, getResult, getStatus, uploadCsv } from "../services/DashboardApi";
 import { calculateAccuracy, calculateMAE, calculateRMSE } from "../utils/metrics";
-import { downloadResultsAsCSV } from "../utils/csvExport";
+import { downloadResultsAsCSV } from "../utils/CSVExport";
 
 const stageMessages = {
   accepted: { text: "File uploaded successfully! Processing will start shortly...", type: "loading" },
