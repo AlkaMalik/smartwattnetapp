@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartWattTFT : Energy Forecast Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #f4f6fb;
+            --card: #ffffff;
+            --text: #2b2f3a;
+            --muted: #7b8394;
+            --primary: #3f7bd9;
+            --primary-soft: #e7f0ff;
+            --success: #34a86a;
+            --success-soft: #e8f7ef;
+            --warning-soft: #fff4e5;
+            --border: #e6e9f2;
+            --shadow: 0 10px 30px rgba(28, 38, 70, 0.08);
+            --radius: 14px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(1200px 600px at 50% -20%, #fdfbff 0%, #f4f6fb 60%, #eef1f8 100%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, #f7f9fe 0%, #f0f3fb 100%);
+            border-right: 1px solid var(--border);
+            padding: 20px 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: #e8f0ff;
+            display: grid;
+            place-items: center;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .brand-title {
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            color: #5e6a80;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .nav-item:hover { background: #eef2fb; }
+
+        .nav-item.active {
+            background: #e7f0ff;
+            color: #2b5dbb;
+            font-weight: 600;
+        }
+
+        /* Main layout */
+        .main { display: flex; flex-direction: column; }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(6px);
+        }
+
+        .title-block h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c4a8a;
+        }
+
+        .title-block p {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f6eede;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #6f5a2e;
+        }
+
+        .profile .avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #2f6bc2;
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .content { 
+            padding: 24px 28px 40px; 
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 20px;
+            align-items: start;
+            max-width: 100%;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px;
+        }
+
+        .card h2 { font-size: 16px; margin-bottom: 6px; }
+        .card p { font-size: 13px; color: var(--muted); }
+
+        /* Upload card */
+        .upload-card .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .cloud {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: #e9f2ff;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+        }
+
+        .upload-zone {
+            border: 1.5px dashed #cbd7f0;
+            border-radius: 12px;
+            padding: 20px;
+            background: #f8f9fd;
+            cursor: pointer;
+            transition: 0.2s ease;
+            margin-bottom: 12px;
+        }
+
+        .upload-zone:hover { background: #f1f5ff; }
+        .upload-zone.dragover { background: #eaf1ff; transform: scale(1.01); }
+
+        .upload-zone .upload-text { font-weight: 600; }
+        .upload-zone .upload-subtext { font-size: 12px; color: var(--muted); }
+
+        .file-name {
+            display: none;
+            background: var(--success-soft);
+            border: 1px solid #bfe7d4;
+            color: #2c7a52;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .file-name.active { display: block; }
+
+        .upload-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s ease;
+        }
+
+        .btn-primary { background: #4f8ee1; color: #fff; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: #fff1f1;
+            color: #b84f4f;
+            border: 1px solid #f1c7c7;
+        }
+
+        .status-message {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            display: none;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .status-message.show { display: block; }
+        .status-message.success { background: var(--success-soft); color: #2c7a52; border: 1px solid #bfe7d4; }
+        .status-message.error { background: #ffecec; color: #b13a3a; border: 1px solid #f1c7c7; }
+        .status-message.loading { background: #eaf2ff; color: #2b5dbb; border: 1px solid #c7d8f7; }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #2b5dbb;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Summary cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .summary-item {
+            background: #f6f8ff;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .summary-item h3 { font-size: 12px; color: var(--muted); }
+
+        .summary-item .value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        .summary-item.green { background: #eaf7ef; }
+
+        .date-row {
+            margin-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 12px;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+        }
+
+        /* Chart card */
+        .chart-card { margin-top: 20px; }
+
+        .chart-card h2 {
+            margin-bottom: 4px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .chart-placeholder {
+            margin-top: 0;
+            height: 380px !important;
+            padding: 15px !important;
+            background: #f5f7fd;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 100% !important;
+            max-width: none;
+        }
+
+        #dashboardChart {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none;
+        }
+
+        /* CTA */
+        .cta-wrap {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 32px;
+            margin-left: -28px;
+            margin-right: -28px;
+            width: calc(100% + 56px);
+            padding: 0;
+        }
+
+        .btn-cta {
+            background: #4f8ee1;
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 10px;
+            box-shadow: 0 8px 18px rgba(79, 142, 225, 0.25);
+        }
+
+        .btn-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 1000px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 { margin: 0; color: #333; }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: auto;
+            height: auto;
+        }
+
+        .close-btn:hover { color: #333; }
+
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .download-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .metrics-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .metric-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        .metric-box .value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .results-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .results-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .results-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .results-table tbody tr:hover { background: #f8f9ff; }
+        .results-table tbody tr:last-child td { border-bottom: none; }
+
+        .meter-badge {
+            display: inline-block;
+            background: #e8ebff;
+            color: #667eea;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-title">SmartWatt</div>
+            </div>
+            <nav class="nav">
+                <a class="nav-item active" href="#">Dashboard</a>
+                <a class="nav-item" href="#">Help</a>
+            </nav>
+        </aside>
+
+        <div class="main">
+            <header class="topbar">
+                <div class="title-block">
+                    <h1>SmartWattTFT : Energy Forecast Dashboard</h1>
+                    <p>SmartWatt · Net Knowledge Graph Ontology</p>
+                </div>
+            </header>
+
+            <main class="content">
+                <div class="grid">
+                    <div class="col-left">
+                        <section class="card upload-card">
+                            
+                            <div class="upload-zone" id="uploadZone">
+                                <div class="upload-text">Click to browse or drag and drop</div>
+                                <div class="upload-subtext">CSV files only</div>
+                            </div>
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <div class="cloud">☁️</div>
+                                    <div>
+                                        <h2>Upload Smart Meter Data</h2>
+                                        <p>Upload smart meter CSV data to generate short‑term forecasts using the TFT model.</p>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" id="uploadBtn" disabled>Upload Data</button>
+                            </div>
+
+                            <div class="file-name" id="fileName"></div>
+
+                            <div class="upload-actions">
+                                <button class="btn btn-secondary" id="clearBtn">Clear Uploaded Data</button>
+                            </div>
+
+                            <div class="status-message" id="statusMessage"></div>
+                        </section>
+
+                        <!-- REMOVED DUPLICATE CHART CARD FROM HERE -->
+                    </div>
+
+                    <div class="col-right">
+                        <section class="card">
+                            <h2>Overview Summary</h2>
+                            <div class="summary-grid">
+                                <div class="summary-item">
+                                    <h3>RMSE</h3>
+                                    <div class="value" id="rmseValue">—</div>
+                                </div>
+                                <div class="summary-item green">
+                                    <h3>MAE</h3>
+                                    <div class="value" id="maeValue">—</div>
+                                </div>
+                            </div>
+                            
+                        </section>
+
+                        <section class="card" style="margin-top:16px;">
+                            <h2>Forecast Accuracy</h2>
+                            <div class="summary-grid">
+                                <div class="summary-item">
+                                    <h3>RMSE</h3>
+                                    <div class="value" id="rmseValue2">—</div>
+                                </div>
+                                <div class="summary-item green">
+                                    <h3>Accuracy</h3>
+                                    <div class="value" id="accuracyValue">—</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ONLY ONE CHART CARD - spans full width -->
+                    <section class="card chart-card">
+                        <h2>Short-Term Energy Consumption Forecast</h2>
+                        <div class="meter-id-label" id="meterIdLabel">—</div>
+                        <div class="chart-placeholder">
+                            <canvas id="dashboardChart"></canvas>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="cta-wrap">
+                    <button class="btn btn-cta" id="predictionBtn" disabled>View Forecast</button>
+                    <button class="btn btn-cta" id="downloadForecastBtn" disabled style="background: #34a86a; box-shadow: 0 8px 18px rgba(52, 168, 106, 0.25);">Download Forecast</button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileName = document.getElementById('fileName');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const predictionBtn = document.getElementById('predictionBtn');
+        const downloadForecastBtn = document.getElementById('downloadForecastBtn');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Create hidden file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.id = 'fileInput';
+        input.accept = '.csv';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+
+        let selectedFile = null;
+        let currentUploadId = null;
+        let statusPollInterval = null;
+        let predictionData = null;
+        let dashboardChartInstance = null;
+
+        // Status stage messages
+        const stageMessages = {
+            'accepted': {
+                text: 'File uploaded successfully! Processing will start shortly...',
+                emoji: '⏳',
+                type: 'loading'
+            },
+            'data_retrieving': {
+                text: 'Retrieving processed data from database...',
+                emoji: '📊',
+                type: 'loading'
+            },
+            'getting_prediction': {
+                text: 'Running TFT pipeline (training + prediction)...',
+                emoji: '🤖',
+                type: 'loading'
+            },
+            'completed': {
+                text: 'Workflow completed successfully! Click VIEW FORECAST to see results.',
+                emoji: '✅',
+                type: 'success'
+            }
+        };
+
+        // Helper functions
+        function showStatus(message, type) {
+            statusMessage.innerHTML = message;
+            statusMessage.className = `status-message show ${type}`;
+        }
+
+        function clearStatus() {
+            statusMessage.classList.remove('show');
+        }
+
+        function calculateMAE(predictions, originalValues) {
+            if (predictions.length !== originalValues.length || predictions.length === 0) {
+                return 0;
+            }
+            const sumAbsError = predictions.reduce((sum, pred, idx) => {
+                return sum + Math.abs(pred - originalValues[idx]);
+            }, 0);
+            return sumAbsError / predictions.length;
+        }
+
+        function calculateRMSE(predictions, originalValues) {
+            if (predictions.length !== originalValues.length || predictions.length === 0) {
+                return 0;
+            }
+            const sumSquaredError = predictions.reduce((sum, pred, idx) => {
+                const error = pred - originalValues[idx];
+                return sum + (error * error);
+            }, 0);
+            return Math.sqrt(sumSquaredError / predictions.length);
+        }
+
+        // Calculate accuracy using the formula: Accuracy (%) = 100 × (1 - MAE / mean(y_actual))
+        function calculateAccuracy(predictions, originalValues) {
+            if (predictions.length !== originalValues.length || predictions.length === 0) {
+                return 0;
+            }
+
+            // Calculate MAE
+            const mae = calculateMAE(predictions, originalValues);
+            
+            // Calculate mean of actual values (y_actual)
+            const meanActual = originalValues.reduce((sum, val) => sum + val, 0) / originalValues.length;
+            
+            if (meanActual === 0) {
+                console.warn('Mean of actual values is zero, cannot calculate accuracy');
+                return 0;
+            }
+
+            // Apply formula: Accuracy (%) = 100 × (1 - MAE / mean(y_actual))
+            const accuracy = 100 * (1 - (mae / meanActual));
+            
+            // Clamp between 0 and 100
+            const finalAccuracy = Math.max(0, Math.min(100, accuracy));
+            
+            console.log('MAE:', mae.toFixed(4), 'Mean Actual:', meanActual.toFixed(4), 'Accuracy:', finalAccuracy.toFixed(2), '%');
+            
+            return finalAccuracy;
+        }
+
+        // Alternative: Calculate accuracy based on RMSE
+        function calculateAccuracyFromRMSE(predictions, originalValues) {
+            if (predictions.length !== originalValues.length || predictions.length === 0) {
+                return 0;
+            }
+
+            // Calculate RMSE
+            const rmse = calculateRMSE(predictions, originalValues);
+            
+            // Calculate standard deviation of actual values
+            const meanActual = originalValues.reduce((sum, val) => sum + val, 0) / originalValues.length;
+            const variance = originalValues.reduce((sum, val) => sum + Math.pow(val - meanActual, 2), 0) / originalValues.length;
+            const stdDev = Math.sqrt(variance);
+            
+            if (stdDev === 0) {
+                return 0;
+            }
+
+            // Normalized RMSE accuracy: Accuracy = (1 - RMSE/StdDev) * 100
+            const normalizedRMSE = rmse / stdDev;
+            const accuracy = Math.max(0, Math.min(100, (1 - normalizedRMSE) * 100));
+            
+            console.log('RMSE:', rmse.toFixed(4), 'StdDev:', stdDev.toFixed(4), 'Accuracy:', accuracy.toFixed(2), '%');
+            
+            return accuracy;
+        }
+
+        // R² Score (Coefficient of Determination) - best for regression models
+        function calculateAccuracyR2(predictions, originalValues) {
+            if (predictions.length !== originalValues.length || predictions.length === 0) {
+                return 0;
+            }
+
+            // Calculate mean of actual values
+            const meanActual = originalValues.reduce((sum, val) => sum + val, 0) / originalValues.length;
+            
+            // Calculate Total Sum of Squares (TSS)
+            const tss = originalValues.reduce((sum, val) => {
+                return sum + Math.pow(val - meanActual, 2);
+            }, 0);
+            
+            if (tss === 0) {
+                return 0;
+            }
+            
+            // Calculate Residual Sum of Squares (RSS)
+            const rss = predictions.reduce((sum, pred, idx) => {
+                return sum + Math.pow(originalValues[idx] - pred, 2);
+            }, 0);
+            
+            // Calculate R² = 1 - (RSS/TSS)
+            const r2 = 1 - (rss / tss);
+            
+            // Convert to percentage (R² ranges from -∞ to 1, but typically 0 to 1)
+            const accuracy = Math.max(0, Math.min(100, r2 * 100));
+            
+            console.log('R² Score:', r2.toFixed(4), 'Accuracy:', accuracy.toFixed(2), '%');
+            
+            return accuracy;
+        }
+
+        // Escape CSV
+        function escapeCSV(value) {
+            if (value === null || value === undefined) {
+                return '';
+            }
+
+            const stringValue = String(value);
+
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return '"' + stringValue.replace(/"/g, '""') + '"';
+            }
+
+            return stringValue;
+        }
+
+        // Click to open file browser
+        uploadZone.addEventListener('click', () => {
+            input.click();
+        });
+
+        // Handle file selection
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && (file.type === 'text/csv' || file.name.endsWith('.csv'))) {
+                selectedFile = file;
+                fileName.textContent = `✓ Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                fileName.classList.add('active');
+                uploadBtn.disabled = false;
+                predictionBtn.disabled = true;
+                downloadForecastBtn.disabled = true;
+                clearStatus();
+            } else if (file) {
+                showStatus('❌ Please select a valid CSV file', 'error');
+                uploadBtn.disabled = true;
+                selectedFile = null;
+                fileName.classList.remove('active');
+            }
+        });
+
+        // Drag and drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+                    selectedFile = file;
+                    fileName.textContent = `✓ Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                    fileName.classList.add('active');
+                    uploadBtn.disabled = false;
+                    predictionBtn.disabled = true;
+                    downloadForecastBtn.disabled = true;
+                    clearStatus();
+                } else {
+                    showStatus('❌ Please drop a valid CSV file', 'error');
+                    uploadBtn.disabled = true;
+                    selectedFile = null;
+                }
+            }
+        });
+
+        // Upload file
+        uploadBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                showStatus('❌ Please select a file first', 'error');
+                return;
+            }
+
+            uploadBtn.disabled = true;
+            clearBtn.disabled = true;
+            showStatus('<span class="spinner"></span>Uploading file...', 'loading');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/upload/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status === 'accepted') {
+                        currentUploadId = data.upload_id;
+                        predictionData = null;
+                        predictionBtn.disabled = true;
+                        downloadForecastBtn.disabled = true;
+
+                        startStatusPolling(data.upload_id);
+
+                        const successMsg = `✓ File uploaded!<br>Upload ID: <strong>${data.upload_id}</strong>`;
+                        showStatus(successMsg, 'success');
+                        console.log('Server response:', data);
+                    } else {
+                        showStatus(`❌ Unexpected status: ${data.status}`, 'error');
+                        uploadBtn.disabled = false;
+                        clearBtn.disabled = false;
+                    }
+                } else {
+                    showStatus(`❌ Upload failed: ${response.statusText}`, 'error');
+                    console.error('Response status:', response.status, response.statusText);
+                    uploadBtn.disabled = false;
+                    clearBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                const errorMsg = error.message === 'Failed to fetch'
+                    ? '❌ Cannot connect to server. Ensure http://127.0.0.1:8000/ is accessible.'
+                    : `❌ Error: ${error.message}`;
+                showStatus(errorMsg, 'error');
+                uploadBtn.disabled = false;
+                clearBtn.disabled = false;
+            }
+        });
+
+        // Start polling for status
+        function startStatusPolling(uploadId) {
+            console.log('Starting status polling for upload ID:', uploadId);
+
+            statusPollInterval = setInterval(async () => {
+                try {
+                    const statusUrl = `http://127.0.0.1:8000/status/?id=${uploadId}`;
+                    const response = await fetch(statusUrl);
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Status data received:', data);
+
+                        let stage;
+                        if (data.status && typeof data.status === 'object' && data.status.stage) {
+                            stage = data.status.stage;
+                        } else if (data.status && typeof data.status === 'string') {
+                            stage = data.status;
+                        } else {
+                            stage = data.stage;
+                        }
+
+                        // Handle backend auto-reset on error
+                        if (stage === 'reset') {
+                            const msg = data.message || 'Processing failed and server was reset.';
+                            showStatus(`❌ ${msg}`, 'error');
+
+                            clearInterval(statusPollInterval);
+                            statusPollInterval = null;
+
+                            currentUploadId = null;
+                            uploadBtn.disabled = false;
+                            clearBtn.disabled = false;
+                            predictionBtn.disabled = true;
+                            downloadForecastBtn.disabled = true;
+                            return;
+                        }
+
+                        if (stageMessages[stage]) {
+                            const stageInfo = stageMessages[stage];
+                            showStatus(`${stageInfo.emoji} ${stageInfo.text}`, stageInfo.type);
+                        } else if (stage) {
+                            showStatus(`Processing... Current stage: ${stage}`, 'loading');
+                        }
+
+                        if (stage === 'completed') {
+                            console.log('Workflow completed! Fetching results...');
+                            try {
+                                const resultResponse = await fetch(`http://127.0.0.1:8000/result/?id=${uploadId}`);
+                                if (resultResponse.ok) {
+                                    predictionData = await resultResponse.json();
+                                    console.log('Results fetched successfully:', predictionData);
+                                } else {
+                                    console.error('Failed to fetch results:', resultResponse.status);
+                                    predictionData = data;
+                                }
+                            } catch (error) {
+                                console.error('Error fetching results:', error);
+                                predictionData = data;
+                            }
+
+                            predictionBtn.disabled = false;
+                            downloadForecastBtn.disabled = false;
+                            uploadBtn.disabled = false;
+                            clearBtn.disabled = false;
+                            clearInterval(statusPollInterval);
+                            statusPollInterval = null;
+                            showStatus('✅ Workflow completed successfully! Click VIEW FORECAST to see results.', 'success');
+                        }
+                    } else if (response.status === 404) {
+                        console.error('Upload ID not found (404)');
+                        showStatus('❌ Upload ID expired or not found', 'error');
+                        clearInterval(statusPollInterval);
+                        statusPollInterval = null;
+                        uploadBtn.disabled = false;
+                        clearBtn.disabled = false;
+                    } else {
+                        showStatus(`Status check failed: ${response.statusText}`, 'error');
+                        uploadBtn.disabled = false;
+                        clearBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Status polling error:', error);
+                    showStatus('❌ Error checking status: ' + error.message, 'error');
+                    uploadBtn.disabled = false;
+                    clearBtn.disabled = false;
+                    if (error.message.includes('CORS')) {
+                        clearInterval(statusPollInterval);
+                        statusPollInterval = null;
+                    }
+                }
+            }, 2000);
+        }
+
+        // Update dashboard metrics + chart
+        function updateDashboardFromResults(data) {
+            let result = data.result || data;
+
+            if (!result || typeof result !== 'object') {
+                return;
+            }
+
+            const allPredictions = [];
+            const allOriginalValues = [];
+            const allTimestamps = [];
+            const allMeterIds = [];
+
+            if (typeof result === 'object' && !Array.isArray(result)) {
+                for (const [motorId, predictions] of Object.entries(result)) {
+                    if (Array.isArray(predictions)) {
+                        for (const pred of predictions) {
+                            const prediction = pred.prediction ?? 0;
+                            const original = pred.original_value ?? 0;
+                            const timestamp = pred.timestamp ?? 'N/A';
+                            const meter_id = pred.meter_id || motorId;
+
+                            if (typeof prediction === 'number' && typeof original === 'number') {
+                                allPredictions.push(prediction);
+                                allOriginalValues.push(original);
+                                allTimestamps.push(timestamp);
+                                allMeterIds.push(meter_id);
+                            }
+                        }
+                    }
+                }
+            }
+
+            console.log('Total data points:', allPredictions.length);
+            console.log('Sample predictions:', allPredictions.slice(0, 5));
+            console.log('Sample actuals:', allOriginalValues.slice(0, 5));
+
+            // Calculate metrics
+            const mae = calculateMAE(allPredictions, allOriginalValues);
+            const rmse = calculateRMSE(allPredictions, allOriginalValues);
+            const accuracy = calculateAccuracy(allPredictions, allOriginalValues);
+
+            console.log('MAE:', mae.toFixed(4), 'RMSE:', rmse.toFixed(4), 'Accuracy:', accuracy.toFixed(2), '%');
+
+            // Update UI elements
+            const rmseEl = document.getElementById('rmseValue');
+            const maeEl = document.getElementById('maeValue');
+            const rmseEl2 = document.getElementById('rmseValue2');
+            const accuracyEl = document.getElementById('accuracyValue');
+
+            if (rmseEl) rmseEl.textContent = `${rmse.toFixed(4)} kWh`;
+            if (maeEl) maeEl.textContent = `${mae.toFixed(4)} kWh`;
+            if (rmseEl2) rmseEl2.textContent = `${rmse.toFixed(4)} kWh`;
+            if (accuracyEl) accuracyEl.textContent = `${accuracy.toFixed(2)}%`;
+
+            // Set Meter ID label dynamically from data
+            const uniqueMeterIds = [...new Set(allMeterIds)];
+            const meterIdLabel = document.getElementById('meterIdLabel');
+            if (meterIdLabel) {
+                if (uniqueMeterIds.length === 1) {
+                    meterIdLabel.textContent = `Meter Id ${uniqueMeterIds[0]}`;
+                } else if (uniqueMeterIds.length > 1) {
+                    meterIdLabel.textContent = `Multiple Meters (${uniqueMeterIds.join(', ')})`;
+                } else {
+                    meterIdLabel.textContent = 'Meter Id —';
+                }
+            }
+
+            if (allPredictions.length > 0) {
+                createDashboardChart(allTimestamps, allPredictions, allOriginalValues);
+            }
+        }
+
+        // Dashboard chart - timestamps only on x-axis
+        function createDashboardChart(timestamps, predictions, originalValues) {
+            const ctx = document.getElementById('dashboardChart');
+            if (!ctx) return;
+
+            if (dashboardChartInstance) {
+                dashboardChartInstance.destroy();
+            }
+
+            const step = Math.max(1, Math.floor(timestamps.length / 20));
+
+            dashboardChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [
+                        {
+                            label: 'Predicted Energy',
+                            data: predictions,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.08)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 2,
+                            pointBackgroundColor: '#e74c3c',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 1,
+                            pointHoverRadius: 4
+                        },
+                        {
+                            label: 'Actual Energy',
+                            data: originalValues,
+                            borderColor: '#34a86a',
+                            backgroundColor: 'rgba(52, 168, 106, 0.08)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 2,
+                            pointBackgroundColor: '#34a86a',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 1,
+                            pointHoverRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 5,
+                            bottom: 5,
+                            left: 5,
+                            right: 5
+                        }
+                    },
+                    plugins: {
+                        legend: { 
+                            display: true, 
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 10,
+                            titleFont: {
+                                size: 12,
+                                weight: '600'
+                            },
+                            bodyFont: {
+                                size: 11
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Timestamp',  // CHANGED: Removed "Meter ID |"
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                },
+                                color: '#6b7280'
+                            },
+                            ticks: {
+                                callback: function(value, index) {
+                                    return index % step === 0 ? timestamps[index] : '';
+                                },
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Energy (kWh)',
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Download results as CSV
+        function downloadResultsAsCSV(data) {
+            let result = data.result || data;
+
+            if (typeof result !== 'object' || !result) {
+                alert('No data to download');
+                return;
+            }
+
+            let csvContent = 'data:text/csv;charset=utf-8,';
+            csvContent += 'Meter ID,Prediction,Timestamp,Original Value\r\n';
+
+            let rowCount = 0;
+
+            if (typeof result === 'object' && !Array.isArray(result)) {
+                for (const [motorId, predictions] of Object.entries(result)) {
+                    if (Array.isArray(predictions)) {
+                        for (const pred of predictions) {
+                            const meter_id = pred.meter_id || motorId;
+                            const prediction = typeof pred.prediction === 'number'
+                                ? pred.prediction.toFixed(4)
+                                : pred.prediction || '';
+                            const timestamp = pred.timestamp || '';
+                            const original = typeof pred.original_value === 'number'
+                                ? pred.original_value.toFixed(3)
+                                : pred.original_value || '';
+
+                            const escapedValues = [
+                                escapeCSV(meter_id),
+                                escapeCSV(prediction),
+                                escapeCSV(timestamp),
+                                escapeCSV(original)
+                            ];
+
+                            csvContent += escapedValues.join(',') + '\r\n';
+                            rowCount++;
+                        }
+                    }
+                }
+            }
+
+            if (rowCount === 0) {
+                alert('No prediction data to export');
+                return;
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `predictions_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showStatus('✅ Forecast CSV downloaded successfully!', 'success');
+        }
+
+        // View Forecast button - only update dashboard
+        predictionBtn.addEventListener('click', () => {
+            if (predictionData) {
+                updateDashboardFromResults(predictionData);
+                showStatus('✅ Forecast displayed on dashboard!', 'success');
+            } else {
+                alert('No prediction data available');
+            }
+        });
+
+        // Download Forecast button - download CSV
+        downloadForecastBtn.addEventListener('click', () => {
+            if (predictionData) {
+                downloadResultsAsCSV(predictionData);
+            } else {
+                alert('No prediction data available to download');
+            }
+        });
+
+        
+        // Clear selection
+        clearBtn.addEventListener('click', async () => {
+            // Reset server state if we have an active upload ID
+            if (currentUploadId) {
+                try {
+                    await fetch(`http://127.0.0.1:8000/clear/?id=${currentUploadId}`);
+                    console.log('Server state cleared for upload ID:', currentUploadId);
+                } catch (error) {
+                    console.warn('Could not clear server state:', error.message);
+                }
+            }
+
+            selectedFile = null;
+            currentUploadId = null;
+            predictionData = null;
+            input.value = '';
+            fileName.classList.remove('active');
+            uploadBtn.disabled = true;
+            clearBtn.disabled = false;
+            predictionBtn.disabled = true;
+            downloadForecastBtn.disabled = true;
+            clearStatus();
+
+            // Clear dashboard
+            const rmseEl = document.getElementById('rmseValue');
+            const maeEl = document.getElementById('maeValue');
+            const rmseEl2 = document.getElementById('rmseValue2');
+            const accuracyEl = document.getElementById('accuracyValue');
+            const meterIdLabel = document.getElementById('meterIdLabel');
+
+            if (rmseEl) rmseEl.textContent = '—';
+            if (maeEl) maeEl.textContent = '—';
+            if (rmseEl2) rmseEl2.textContent = '—';
+            if (accuracyEl) accuracyEl.textContent = '—';
+            if (meterIdLabel) meterIdLabel.textContent = 'Meter Id —';
+
+            if (dashboardChartInstance) {
+                dashboardChartInstance.destroy();
+                dashboardChartInstance = null;
+            }
+
+            if (statusPollInterval) {
+                clearInterval(statusPollInterval);
+                statusPollInterval = null;
+            }
+        });
+
+    </script>
+</body>
+</html>
