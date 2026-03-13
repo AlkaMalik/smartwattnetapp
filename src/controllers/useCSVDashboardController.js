@@ -5,9 +5,9 @@ import { downloadResultsAsCSV } from "../utils/csvExport";
 
 const stageMessages = {
   accepted: { text: "File uploaded successfully! Processing will start shortly...", type: "loading" },
-  data_retrieving: { text: "Retrieving processed data from database...", type: "loading" },
-  getting_prediction: { text: "Running TFT pipeline (training + prediction)...", type: "loading" },
-  completed: { text: "Workflow completed successfully! Click VIEW FORECAST to see results.", type: "success" },
+  data_retrieving: { text: "Retrieving Knowledge Graph Ontology from Database...", type: "loading" },
+  getting_prediction: { text: "Running ATFT Prediction...", type: "loading" },
+  completed: { text: "Workflow completed successfully! Forecast is now displayed.", type: "success" },
 };
 
 export function useCsvDashboardController() {
@@ -17,6 +17,8 @@ export function useCsvDashboardController() {
 
   const [status, setStatus] = useState({ text: "", type: "" });
   const [isUploading, setIsUploading] = useState(false);
+
+  const [progressDialog, setProgressDialog] = useState({ open: false, text: "" });
 
   const [metrics, setMetrics] = useState({ rmse: "—", mae: "—", accuracy: "—" });
   const [meterLabel, setMeterLabel] = useState("—");
@@ -54,15 +56,20 @@ export function useCsvDashboardController() {
 
     setIsUploading(true);
     setStatus({ text: "Uploading file...", type: "loading" });
+    setProgressDialog({ open: true, text: "Uploading file..." });
 
     try {
       const data = await uploadCsv(selectedFile);
       if (data.status !== "accepted") throw new Error(`Unexpected status: ${data.status}`);
       setCurrentUploadId(data.upload_id);
-      setStatus({ text: `✓ File uploaded! Upload ID: ${data.upload_id}`, type: "success" });
+
+      setStatus(stageMessages.accepted);
+      setProgressDialog({ open: true, text: stageMessages.accepted.text });
+
       startPolling(data.upload_id);
     } catch (e) {
       setStatus({ text: `❌ ${e.message}`, type: "error" });
+      setProgressDialog({ open: false, text: "" });
       setIsUploading(false);
     }
   }
@@ -111,13 +118,13 @@ export function useCsvDashboardController() {
   function viewForecast() {
     if (!predictionData) return window.alert("No prediction data available");
     parseAndSetDashboard(predictionData);
-    setStatus({ text: "✅ Forecast displayed on dashboard!", type: "success" });
+    setStatus({ text: "Forecast displayed on dashboard!", type: "success" });
   }
 
   function downloadForecast() {
     if (!predictionData) return window.alert("No prediction data available to download");
     downloadResultsAsCSV(predictionData);
-    setStatus({ text: "✅ Forecast CSV downloaded successfully!", type: "success" });
+    setStatus({ text: "Forecast CSV downloaded successfully!", type: "success" });
   }
 
   async function clearAll() {
@@ -134,6 +141,7 @@ export function useCsvDashboardController() {
     setCurrentUploadId(null);
     setPredictionData(null);
     setStatus({ text: "", type: "" });
+    setProgressDialog({ open: false, text: "" });
     setIsUploading(false);
     setMetrics({ rmse: "—", mae: "—", accuracy: "—" });
     setMeterLabel("Meter Id —");
@@ -150,24 +158,34 @@ export function useCsvDashboardController() {
 
         if (stage === "reset") {
           setStatus({ text: `❌ ${data.message || "Processing failed and server was reset."}`, type: "error" });
+          setProgressDialog({ open: false, text: "" });
           clearInterval(pollRef.current);
           pollRef.current = null;
           setIsUploading(false);
           return;
         }
 
-        if (stageMessages[stage]) setStatus(stageMessages[stage]);
+        if (stageMessages[stage]) {
+          setStatus(stageMessages[stage]);
+          setProgressDialog({ open: true, text: stageMessages[stage].text });
+        }
 
         if (stage === "completed") {
           const result = await getResult(uploadId).catch(() => data);
           setPredictionData(result);
-          setStatus({ text: "✅ Workflow completed successfully! Click VIEW FORECAST to see results.", type: "success" });
+
+          // Auto-generate chart + metrics immediately on completion
+          parseAndSetDashboard(result);
+
+          setStatus(stageMessages.completed);
+          setProgressDialog({ open: false, text: "" });
           setIsUploading(false);
           clearInterval(pollRef.current);
           pollRef.current = null;
         }
       } catch (e) {
         setStatus({ text: `❌ Error checking status: ${e.message}`, type: "error" });
+        setProgressDialog({ open: false, text: "" });
         setIsUploading(false);
       }
     }, 2000);
@@ -179,5 +197,7 @@ export function useCsvDashboardController() {
     selectedFile, fileDisplay, status, metrics, meterLabel, chartPayload,
     canUpload, canView, canDownload, isUploading,
     pickFile, startUpload, viewForecast, downloadForecast, clearAll,
+    progressDialogOpen: progressDialog.open,
+    progressDialogText: progressDialog.text,
   };
 }

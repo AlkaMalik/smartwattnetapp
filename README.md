@@ -1,4 +1,12 @@
-# React + Vite
+$ Get-Service -Name ssh-agent | Set-Service -StartupType Manual
+Start-Service ssh-agent
+bash: Get-Service: command not found
+bash: Set-Service: command not found
+bash: Start-Service: command not found
+
+Alka Malik@DESKTOP-0C7L1U7 MINGW64 /f/Research 2023/SmartWattNetDashboard/smartwattnetapp (master)
+$ ssh-add c:/Users/YOU/.ssh/id_ed25519
+Could not open a connection to your authentication agent.# React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

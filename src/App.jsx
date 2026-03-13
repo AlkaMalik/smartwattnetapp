@@ -1,4 +1,4 @@
-import CsvDashboardPage from "./pages/CsvDashboardPage";
+import CsvDashboardPage from "./pages/CSVDashboardPage";
 
 export default function App() {
   return <CsvDashboardPage />;
