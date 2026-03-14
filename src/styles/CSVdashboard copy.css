@@ -24,7 +24,7 @@
 
         .app {
             display: grid;
-            grid-template-columns: 240px 1fr;
+            grid-template-columns: 213px 1fr; /* 2/3 of 320px */
             min-height: 100vh;
         }
 
@@ -32,7 +32,7 @@
         .sidebar {
             background: linear-gradient(180deg, #f7f9fe 0%, #f0f3fb 100%);
             border-right: 1px solid var(--border);
-            padding: 20px 16px;
+            padding: 19px 13px; /* ~2/3 of 28px 20px */
         }
 
         .brand {
@@ -40,15 +40,13 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            gap: 4px;               /* was 12px */
-            margin-bottom: 16px;    /* was 22px */
-            text-align: center;
+            gap: 10px;
+            margin-bottom: 24px;
         }
 
         .brand-icon {
-            width: auto;            /* remove big empty container spacing */
-            height: auto;           /* remove big empty container spacing */
-            border-radius: 0;
+            width: 107px !important;   /* 2/3 of 160 */
+            height: 107px !important;  /* 2/3 of 160 */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -59,16 +57,16 @@
         }
 
         .brand-icon-img {
-            width: 112px;           /* keep logo large */
-            height: 112px;
+            width: 100px !important;   /* 2/3 of 150 */
+            height: 100px !important;  /* 2/3 of 150 */
             object-fit: contain;
             display: block;
         }
 
         .brand-title {
             margin-top: 0;
-            font-weight: 700;
-            font-size: 20px;
+            font-weight: 800;
+            font-size: 24px !important; /* 2/3 of 36 */
             color: #f59e0b;
             line-height: 1.1;
         }
@@ -118,7 +116,7 @@
         }
 
         .title-block h1 {
-            font-size: 30px;
+            font-size: 28px;
             font-weight: 700;
             color: #2c4a8a;
             margin: 0;           /* remove extra vertical space */
@@ -599,6 +597,33 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.upload-icon {
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+  color: var(--primary);
+}
+
+.metric-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  color: var(--primary);
+  vertical-align: -2px;
+}
+
+.svg-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* slightly smaller icon in metric labels */
+.summary-item .metric-icon .svg-icon {
+  width: 16px;
+  height: 16px;
 }
 
 

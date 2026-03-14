@@ -24,16 +24,22 @@ export function useCsvDashboardController() {
   const [meterLabel, setMeterLabel] = useState("—");
   const [chartPayload, setChartPayload] = useState({ timestamps: [], predictions: [], actuals: [] });
 
+  // NEW: store per-key buckets + current selected key index
+  const [seriesBuckets, setSeriesBuckets] = useState([]);
+  const [activeSeriesIndex, setActiveSeriesIndex] = useState(0);
+
   const pollRef = useRef(null);
+
+  const fileDisplay = useMemo(() => selectedFile?.name ?? "", [selectedFile]);
 
   const canUpload = !!selectedFile && !isUploading;
   const canView = !!predictionData;
   const canDownload = !!predictionData;
 
-  const fileDisplay = useMemo(() => {
-    if (!selectedFile) return "";
-    return `✓ Selected: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`;
-  }, [selectedFile]);
+  // NEW: prev/next controls
+  const canPrevSeries = activeSeriesIndex > 0;
+  const canNextSeries = activeSeriesIndex < seriesBuckets.length - 1;
+  const activeSeriesKey = seriesBuckets[activeSeriesIndex]?.key ?? "—";
 
   function pickFile(file) {
     if (!file) return;
@@ -68,38 +74,65 @@ export function useCsvDashboardController() {
 
       startPolling(data.upload_id);
     } catch (e) {
-      setStatus({ text: `❌ ${e.message}`, type: "error" });
+      if (e?.status === 409) {
+        setStatus({
+          text: "⚠️ Upload conflict: another workflow may already be active. Clear existing upload/workflow and retry.",
+          type: "error",
+        });
+      } else {
+        setStatus({ text: `❌ ${e.message}`, type: "error" });
+      }
       setProgressDialog({ open: false, text: "" });
       setIsUploading(false);
     }
   }
 
-  function parseAndSetDashboard(data) {
+  function toSeriesBuckets(data) {
     const result = data?.result || data;
+
+    if (result && typeof result === "object" && !Array.isArray(result)) {
+      return Object.entries(result)
+        .filter(([, rows]) => Array.isArray(rows))
+        .map(([key, rows]) => ({ key, rows }));
+    }
+
+    if (Array.isArray(result)) {
+      return [{ key: "Result", rows: result }];
+    }
+
+    return [];
+  }
+
+  function applySeriesToDashboard(buckets, index) {
+    if (!buckets.length) {
+      setMetrics({ rmse: "—", mae: "—", accuracy: "—" });
+      setMeterLabel("Meter Id —");
+      setChartPayload({ timestamps: [], predictions: [], actuals: [] });
+      return;
+    }
+
+    const safeIndex = Math.max(0, Math.min(index, buckets.length - 1));
+    const { key, rows } = buckets[safeIndex];
+
     const predictions = [];
     const actuals = [];
     const timestamps = [];
     const meterIds = [];
 
-    if (result && typeof result === "object" && !Array.isArray(result)) {
-      Object.entries(result).forEach(([motorId, rows]) => {
-        if (!Array.isArray(rows)) return;
-        rows.forEach((r) => {
-          const p = r.prediction ?? 0;
-          const a = r.original_value ?? 0;
-          if (typeof p === "number" && typeof a === "number") {
-            predictions.push(p);
-            actuals.push(a);
-            timestamps.push(r.timestamp ?? "N/A");
-            meterIds.push(r.meter_id || motorId);
-          }
-        });
-      });
-    }
+    rows.forEach((r) => {
+      const p = r?.prediction ?? 0;
+      const a = r?.original_value ?? 0;
+      if (typeof p === "number" && typeof a === "number") {
+        predictions.push(p);
+        actuals.push(a);
+        timestamps.push(r.timestamp ?? "N/A");
+        meterIds.push(r.meter_id || key);
+      }
+    });
 
-    const mae = calculateMAE(predictions, actuals);
-    const rmse = calculateRMSE(predictions, actuals);
-    const accuracy = calculateAccuracy(predictions, actuals);
+    const mae = predictions.length ? calculateMAE(predictions, actuals) : 0;
+    const rmse = predictions.length ? calculateRMSE(predictions, actuals) : 0;
+    const accuracy = predictions.length ? calculateAccuracy(predictions, actuals) : 0;
 
     setMetrics({
       rmse: `${rmse.toFixed(4)} kWh`,
@@ -110,14 +143,38 @@ export function useCsvDashboardController() {
     const unique = [...new Set(meterIds)];
     if (unique.length === 1) setMeterLabel(`Meter Id ${unique[0]}`);
     else if (unique.length > 1) setMeterLabel(`Multiple Meters (${unique.join(", ")})`);
-    else setMeterLabel("Meter Id —");
+    else setMeterLabel(`Meter Id ${key}`);
 
     setChartPayload({ timestamps, predictions, actuals });
   }
 
+  function parseAndSetDashboard(data, targetIndex = 0) {
+    const buckets = toSeriesBuckets(data);
+    setSeriesBuckets(buckets);
+
+    const safeIndex = Math.max(0, Math.min(targetIndex, Math.max(buckets.length - 1, 0)));
+    setActiveSeriesIndex(safeIndex);
+    applySeriesToDashboard(buckets, safeIndex);
+  }
+
+  // NEW: navigation actions
+  function showPrevSeries() {
+    if (!canPrevSeries) return;
+    const nextIndex = activeSeriesIndex - 1;
+    setActiveSeriesIndex(nextIndex);
+    applySeriesToDashboard(seriesBuckets, nextIndex);
+  }
+
+  function showNextSeries() {
+    if (!canNextSeries) return;
+    const nextIndex = activeSeriesIndex + 1;
+    setActiveSeriesIndex(nextIndex);
+    applySeriesToDashboard(seriesBuckets, nextIndex);
+  }
+
   function viewForecast() {
     if (!predictionData) return window.alert("No prediction data available");
-    parseAndSetDashboard(predictionData);
+    parseAndSetDashboard(predictionData, activeSeriesIndex);
     setStatus({ text: "Forecast displayed on dashboard!", type: "success" });
   }
 
@@ -146,6 +203,10 @@ export function useCsvDashboardController() {
     setMetrics({ rmse: "—", mae: "—", accuracy: "—" });
     setMeterLabel("Meter Id —");
     setChartPayload({ timestamps: [], predictions: [], actuals: [] });
+
+    // NEW reset
+    setSeriesBuckets([]);
+    setActiveSeriesIndex(0);
   }
 
   function startPolling(uploadId) {
@@ -197,6 +258,16 @@ export function useCsvDashboardController() {
     selectedFile, fileDisplay, status, metrics, meterLabel, chartPayload,
     canUpload, canView, canDownload, isUploading,
     pickFile, startUpload, viewForecast, downloadForecast, clearAll,
+
+    // NEW exports for Prev/Next buttons
+    canPrevSeries,
+    canNextSeries,
+    activeSeriesKey,
+    activeSeriesIndex,
+    totalSeries: seriesBuckets.length,
+    showPrevSeries,
+    showNextSeries,
+
     progressDialogOpen: progressDialog.open,
     progressDialogText: progressDialog.text,
   };
