@@ -249,7 +249,7 @@ export function useCsvDashboardController() {
         setProgressDialog({ open: false, text: "" });
         setIsUploading(false);
       }
-    }, 2000);
+    }, 5000);
   }
 
   useEffect(() => () => pollRef.current && clearInterval(pollRef.current), []);
