@@ -59,6 +59,11 @@ export default function CsvDashboardPage() {
     fileRef.current?.click();
   };
 
+  const openInNewTab = (url) => (e) => {
+  e.preventDefault();
+  window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   const showInlineStatus = status?.type === "error";
 
   return (
@@ -89,6 +94,27 @@ export default function CsvDashboardPage() {
             </div>
             <div className="brand-title">SmartWatt Net</div>
           </div>
+
+          <nav className="sidebar-menu" aria-label="Help menu">
+            <a
+              className="menu-link"
+              href="https://github.com/AlkaMalik/smartwattnetapp/blob/master/README.md"
+              onClick={openInNewTab("https://github.com/AlkaMalik/smartwattnetapp/blob/master/README.md")}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Beginner’s Guide
+            </a>
+            <a
+              className="menu-link"
+              href="https://github.com/AlkaMalik/smartwattnetapp/blob/master/UNIVERSALREADME.md"
+              onClick={openInNewTab("https://github.com/AlkaMalik/smartwattnetapp/blob/master/UNIVERSALREADME.md")}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Installation Guide
+            </a>
+          </nav>
         </aside>
 
         <div className="main">
@@ -194,6 +220,10 @@ export default function CsvDashboardPage() {
               <button className="btn btn-cta" disabled={!canDownload} onClick={downloadForecast}>Download Forecast</button>
             </section>
           </main>
+
+          <div className="copyright-note" aria-label="copyright">
+            Copyright (c) 2026 Alka Malik
+          </div>
         </div>
       </div>
     </>

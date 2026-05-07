@@ -626,5 +626,35 @@
   height: 16px;
 }
 
+.series-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 8px 0 10px;
+  flex-wrap: wrap;
+}
+
+.series-nav-label {
+  min-width: 220px;
+  text-align: center;
+  font-weight: 600;
+  color: #1f2937;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 12px;
+  line-height: 1.2;
+}
+
+.chart-card .series-nav .btn {
+  min-width: 88px;
+}
+
+.chart-card .series-nav .btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 
 

@@ -97,6 +97,52 @@
             font-weight: 600;
         }
 
+        /* Sidebar menu */
+        .sidebar-menu {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .menu-link {
+            display: block;
+            padding: 10px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            color: #f59e0b;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.2s ease;
+        }
+
+        .menu-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Help menu layout */
+        .sidebar-menu {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* proper spacing between links */
+        }
+
+        /* Help links match brand title color */
+        .sidebar-menu .menu-link {
+            display: block;
+            padding: 6px 0;
+            color: var(--sidebar-brand-color);
+            text-decoration: none;
+            line-height: 1.4;
+        }
+
+        /* Optional hover style (keeps same color family) */
+        .sidebar-menu .menu-link:hover {
+            text-decoration: underline;
+        }
+
         /* Main layout */
         .main {
             display: flex;
@@ -654,6 +700,28 @@
 .chart-card .series-nav .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* Keep one shared color for brand + help links */
+:root {
+  --sidebar-brand-color: #f59e0b; /* set this to the exact brand-title color if different */
+}
+
+/* If .brand-title already has a color, replace it with this variable */
+.brand-title {
+  color: var(--sidebar-brand-color);
+}
+
+.copyright-note {
+  position: fixed;
+  right: 16px;
+  bottom: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 4px 8px;
+  border-radius: 6px;
+  z-index: 1000;
 }
 
 

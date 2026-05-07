@@ -11,6 +11,13 @@ export default function CsvDashboardPage() {
     pickFile, startUpload, downloadForecast, clearAll,
     progressDialogOpen,
     progressDialogText,
+    canPrevSeries,
+    canNextSeries,
+    activeSeriesKey,
+    activeSeriesIndex,
+    totalSeries,
+    showPrevSeries,
+    showNextSeries,
   } = useCsvDashboardController();
 
   const isBusy = isUploading || status?.type === "loading";
@@ -47,20 +54,15 @@ export default function CsvDashboardPage() {
 
   const handleUploadZoneClick = async () => {
     if (isBusy) return;
-
-    // perform same reset behavior as "Clear Uploaded Data"
     await clearAll();
-
-    // reset file input and reopen picker
     if (fileRef.current) fileRef.current.value = "";
     fileRef.current?.click();
   };
 
-  const showInlineStatus = status?.type === "error"; // only show errors in upload section
+  const showInlineStatus = status?.type === "error";
 
   return (
     <>
-      {/* Single foreground progress dialog */}
       {progressDialogOpen && (
         <div className="progress-overlay" role="dialog" aria-modal="true" aria-live="polite">
           <div className="progress-dialog">
@@ -70,7 +72,6 @@ export default function CsvDashboardPage() {
         </div>
       )}
 
-      {/* Main app layout */}
       <div className="app">
         <input
           ref={fileRef}
@@ -162,6 +163,29 @@ export default function CsvDashboardPage() {
 
             <section className="card chart-card">
               <h2>Short-Term Energy Consumption Forecast</h2>
+
+              <div className="series-nav">
+                <button
+                  className="btn btn-secondary"
+                  onClick={showPrevSeries}
+                  disabled={isBusy || !canPrevSeries}
+                >
+                  Prev
+                </button>
+
+                <div className="series-nav-label">
+                  {activeSeriesKey} ({totalSeries ? activeSeriesIndex + 1 : 0}/{totalSeries})
+                </div>
+
+                <button
+                  className="btn btn-secondary"
+                  onClick={showNextSeries}
+                  disabled={isBusy || !canNextSeries}
+                >
+                  Next
+                </button>
+              </div>
+
               <div className="meter-id-label">{meterLabel}</div>
               <div className="chart-placeholder"><canvas ref={canvasRef} id="dashboardChart" /></div>
             </section>
