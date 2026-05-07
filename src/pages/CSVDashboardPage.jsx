@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import Chart from "chart.js/auto";
 import { useCsvDashboardController } from "../controllers/useCSVDashboardController";
 import logoIcon from "../assets/Logo.ico";
+import beginnersGuidePdf from "../assets/BeginnersGuide.pdf";
 import "../styles/CSVDashboard.css";
 
 export default function CsvDashboardPage() {
@@ -98,8 +99,8 @@ export default function CsvDashboardPage() {
           <nav className="sidebar-menu" aria-label="Help menu">
             <a
               className="menu-link"
-              href="https://github.com/AlkaMalik/smartwattnetapp/blob/master/README.md"
-              onClick={openInNewTab("https://github.com/AlkaMalik/smartwattnetapp/blob/master/README.md")}
+              href={beginnersGuidePdf}
+              onClick={openInNewTab(beginnersGuidePdf)}
               target="_blank"
               rel="noreferrer"
             >
