@@ -3,7 +3,6 @@ import Chart from "chart.js/auto";
 import { useCsvDashboardController } from "../controllers/useCSVDashboardController";
 import logoIcon from "../assets/Logo.ico";
 import beginnersGuidePdf from "../assets/BeginnersGuide.pdf";
-import UNIVERSALREADME from "../main/UNIVERSALREADME.md";
 import "../styles/CSVDashboard.css";
 
 export default function CsvDashboardPage() {
@@ -109,8 +108,8 @@ export default function CsvDashboardPage() {
             </a>
             <a
               className="menu-link"
-              href={UNIVERSALREADME}
-              onClick={openInNewTab(UNIVERSALREADME)}
+              href="https://github.com/AlkaMalik/smartwattnetapp/blob/master/UNIVERSALREADME.md"
+              onClick={openInNewTab("https://github.com/AlkaMalik/smartwattnetapp/blob/master/UNIVERSALREADME.md")}
               target="_blank"
               rel="noreferrer"
             >
